@@ -48,7 +48,7 @@ const AddHabitModal = ({ open, onClose, onAdd }) => {
 
     console.log('Submitting new habit:', newHabit); // Debugging line
     if (!newHabit.name || !newHabit.frequency) {
-        throw new Error('Missing required fields: name, frequency');
+      throw new Error('Missing required fields: name, frequency');
     }
 
     // validate time range if both provided
@@ -88,20 +88,22 @@ const AddHabitModal = ({ open, onClose, onAdd }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-8 w-full max-w-lg shadow-elevated">
-        <h2 className="text-3xl font-semibold mb-6 text-center text-primary-800">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1050]">
+      <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-elevated">
+
+        <h2 className="text-2xl font-semibold mb-4 text-center text-primary-800">
           Add New Habit
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+
           <input
             name="name"
             placeholder="Habit name"
             value={habitData.name}
             onChange={handleChange}
             required
-            className="w-full p-4 bg-gray-100 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
+            className="w-full p-3 bg-gray-100 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
           />
 
           <textarea
@@ -109,8 +111,8 @@ const AddHabitModal = ({ open, onClose, onAdd }) => {
             placeholder="Description"
             value={habitData.description}
             onChange={handleChange}
-            className="w-full p-4 bg-gray-100 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
-            rows="4"
+            rows="3"
+            className="w-full p-3 bg-gray-100 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
           />
 
           <div className="flex gap-3 flex-wrap justify-center">
@@ -118,12 +120,17 @@ const AddHabitModal = ({ open, onClose, onAdd }) => {
               <button
                 key={option.label}
                 type="button"
-                className={`text-3xl p-4 border rounded-lg flex items-center justify-center transition ${
-                  habitData.emoji === option.value
-                    ? 'bg-primary-600 text-white shadow-md'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                }`}
-                onClick={() => setHabitData((prev) => ({ ...prev, icon: option.icon, emoji: option.value }))}
+                className={`text-2xl p-3 border rounded-lg flex items-center justify-center transition ${habitData.emoji === option.value
+                  ? "bg-primary-600 text-white shadow-md"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                  }`}
+                onClick={() =>
+                  setHabitData((prev) => ({
+                    ...prev,
+                    icon: option.icon,
+                    emoji: option.value,
+                  }))
+                }
                 aria-label={`Select icon ${option.label}`}
               >
                 {option.icon}
@@ -131,47 +138,47 @@ const AddHabitModal = ({ open, onClose, onAdd }) => {
             ))}
           </div>
 
-          <div className="space-y-4">
-            <div className="flex gap-4">
+          <div className="space-y-3">
+            <div className="flex gap-3">
               <input
                 type="time"
                 name="timeFrom"
-                placeholder="Start time"
                 value={habitData.timeFrom}
                 onChange={handleChange}
-                className="w-1/2 p-4 bg-gray-100 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
+                className="w-1/2 p-3 bg-gray-100 text-gray-900 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
               />
 
               <input
                 type="time"
                 name="timeTo"
-                placeholder="End time (optional)"
                 value={habitData.timeTo}
                 onChange={handleChange}
-                className="w-1/2 p-4 bg-gray-100 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
+                className="w-1/2 p-3 bg-gray-100 text-gray-900 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
               />
             </div>
+
             {timeError && (
-              <p className="text-sm text-danger-600 mt-1">{timeError}</p>
+              <p className="text-sm text-danger-600">{timeError}</p>
             )}
-            <p className="text-xs text-gray-500">Set specific start and end times for automatic status tracking</p>
+
+            <p className="text-xs text-gray-500">
+              Set start & end time for automatic tracking
+            </p>
           </div>
 
-          <div className="mt-4">
-            <select
-              name="frequency"
-              value={habitData.frequency}
-              onChange={handleChange}
-              className="w-full p-4 bg-gray-100 text-gray-900 placeholder-gray-500 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
-            >
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-            </select>
-          </div>
+          <select
+            name="frequency"
+            value={habitData.frequency}
+            onChange={handleChange}
+            className="w-full p-3 bg-gray-100 text-gray-900 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-300 transition"
+          >
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
 
           <button
             type="submit"
-            className="w-full bg-primary-600 text-white p-4 rounded-lg hover:bg-primary-700 transition-shadow shadow-md"
+            className="w-full bg-primary-600 text-white p-3 rounded-lg hover:bg-primary-700 transition-shadow shadow-md"
           >
             Add Habit
           </button>
@@ -179,13 +186,14 @@ const AddHabitModal = ({ open, onClose, onAdd }) => {
 
         <button
           onClick={onClose}
-          className="mt-6 block w-full text-center text-sm text-primary-700 hover:text-primary-900 transition"
+          className="mt-4 block w-full text-center text-sm text-primary-700 hover:text-primary-900 transition"
         >
           Close
         </button>
+
       </div>
     </div>
   );
-};
+}
 
 export default AddHabitModal;

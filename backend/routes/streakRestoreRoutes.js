@@ -45,21 +45,23 @@ router.get('/chances', authMiddleware, async (req, res) => {
 });
 
 // Restore a streak (use one chance)
+// Restore a streak (use one chance)
 router.post('/restore', authMiddleware, async (req, res) => {
   try {
-    const { habitId } = req.body;
+    const { habitId, missedDate } = req.body;
     const userId = req.user.id;
 
-    if (!habitId) {
-      return res.status(400).json({ success: false, message: 'Habit ID is required' });
+    if (!habitId || !missedDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'habitId and missedDate are required'
+      });
     }
 
-    // Get current month/year
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    // Find or create restore record
     let restoreRecord = await StreakRestore.findOne({
       user: userId,
       month: currentMonth,
@@ -75,54 +77,37 @@ router.post('/restore', authMiddleware, async (req, res) => {
       });
     }
 
-    // Check if user has remaining chances
     if (restoreRecord.usedChances >= 5) {
       return res.status(400).json({
         success: false,
-        message: 'No restore chances remaining this month. You get 5 chances per month.'
+        message: 'No restore chances remaining this month'
       });
     }
 
-    // Verify habit exists and belongs to user
     const habit = await Habit.findOne({ _id: habitId, user: userId });
     if (!habit) {
       return res.status(404).json({ success: false, message: 'Habit not found' });
     }
 
-    // Get today's date string for comparison
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    // Check if habit was already completed today
-    const isCompletedToday = habit.completedDates.some(date =>
-      date.toISOString().split('T')[0] === todayStr
+    // ✅ Treat restore as COMPLETION of the missed date
+    const alreadyCompleted = habit.completedDates.some(
+      d => d.toISOString().split('T')[0] === missedDate
     );
 
-    if (isCompletedToday) {
-      return res.status(400).json({
-        success: false,
-        message: 'Habit was already completed today'
-      });
+    if (!alreadyCompleted) {
+      habit.completedDates.push(new Date(missedDate));
     }
 
-    // When restoring a streak, we don't mark it as completed
-    // Instead, we keep it as pending so the user can mark it as completed
-    // This allows them to get credit for completing it today
-    habit.status = 'pending';
+    // Increment restore usage
+    restoreRecord.usedChances += 1;
 
     await habit.save();
-
-    // Increment used chances
-    restoreRecord.usedChances += 1;
     await restoreRecord.save();
-
-    const remainingChances = 5 - restoreRecord.usedChances;
 
     res.json({
       success: true,
-      message: 'Streak restored successfully!',
-      restoreChances: remainingChances,
-      usedChances: restoreRecord.usedChances,
+      message: 'Streak restored and marked as completed',
+      restoreChances: 5 - restoreRecord.usedChances,
       habitName: habit.name
     });
 

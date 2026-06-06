@@ -73,6 +73,20 @@ export const AuthProvider = ({ children }) => {
     }
   }, [fetchUser]);
 
+  const updateUser = async (data) => {
+    try {
+      const response = await axios.put(
+      `${import.meta.env.VITE_API_URL}/api/auth/update`,data);
+      if (response.data.success) {
+        setUser(response.data.user);
+        return true;
+      }
+    } catch (err) {
+      console.error("Profile update failed:", err);
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -82,7 +96,8 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         error,
-        fetchUser
+        fetchUser,
+        updateUser,  // <-- add updateUser to context
       }}
     >
       {children}

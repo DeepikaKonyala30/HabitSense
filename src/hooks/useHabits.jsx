@@ -412,6 +412,16 @@ const useHabits = () => {
     }
   };
 
+  const updateHabitState = (id, newFields) => {
+    setHabits(prevHabits => {
+      const updatedHabits = prevHabits.map(habit =>
+        habit._id === id ? { ...habit, ...newFields } : habit
+      );
+      calculateStats(updatedHabits);
+      return updatedHabits;
+    });
+  };
+
   const calculateStats = (habits) => {
     // calculating stats for habits
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -456,21 +466,25 @@ const useHabits = () => {
           }
         }
       } else if (habit.frequency === 'weekly') {
-        // weekly logic unchanged but use completedSet-derived dates array
-        const dates = [...(habit.completedDates || [])].map(d => format(new Date(d), 'yyyy-MM-dd')).sort((a, b) => new Date(b) - new Date(a));
-        const weeks = {};
-        dates.forEach((date) => {
-          const weekStart = format(new Date(date), 'yyyy-WW');
-          weeks[weekStart] = (weeks[weekStart] || 0) + 1;
-        });
-        // weekly completions computed
+          const weeks = {};
+          (habit.completedDates || []).forEach(d => {
+            const key = format(new Date(d), 'RRRR-II');
+            weeks[key] = (weeks[key] || 0) + 1;
+          });
 
-        let currentWeek = format(new Date(), 'yyyy-WW');
-        while (weeks[currentWeek] && weeks[currentWeek] >= (habit.target || 1)) {
-          streak++;
-          currentWeek = format(subDays(new Date(currentWeek), 7), 'yyyy-WW');
+          let cursor = new Date();
+
+          while (true) {
+            const key = format(cursor, 'RRRR-II');
+
+            if (weeks[key] && weeks[key] >= (habit.target || 1)) {
+              streak++;
+              cursor = subDays(cursor, 7);
+            } else {
+              break;
+            }
+          }
         }
-      }
 
       // computed streak for habit
       // attach per-habit streak so UI cards can display it
@@ -523,7 +537,8 @@ const useHabits = () => {
     };
   }, [socket]);
 
-  return { habits, completedToday, streakCount, longestStreak, loading, error, refetch: fetchHabits, deleteHabit, completeHabit, addHabit };
+  return { habits, completedToday, streakCount, longestStreak, loading, error, refetch: fetchHabits, deleteHabit, completeHabit, addHabit, updateHabitState };
 };
 
 export default useHabits;
+

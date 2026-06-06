@@ -117,5 +117,30 @@ router.post('/signup', signup);
 router.post('/login', login);
 router.get('/dashboard', authMiddleware, getDashboard);
 router.get('/me', authMiddleware, getUserProfile);
+router.put('/update', authMiddleware, async (req, res) => {
+  try {
+    const { name, bio, profileImage } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        ...(name && { name }),
+        ...(bio && { bio }),
+        ...(profileImage && { profileImage }),
+      },
+      { new: true }
+    ).select('-password');
+
+    res.json({
+      success: true,
+      user: updatedUser,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update profile',
+    });
+  }
+});
 
 export default router;

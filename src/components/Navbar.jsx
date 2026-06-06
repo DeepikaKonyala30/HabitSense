@@ -31,10 +31,10 @@ function Navbar() {
   const navLinks = !isAuthenticated
     ? [{ to: '/', label: 'Home' }]
     : [
-        { to: '/dashboard', label: 'Dashboard' },
-        { to: '/circles', label: 'Circles' },
-        { to: '/map', label: 'Map' },
-      ];
+      { to: '/dashboard', label: 'Dashboard' },
+      { to: '/circles', label: 'Circles' },
+      { to: '/map', label: 'Map' },
+    ];
 
   const dropdownItems = isAuthenticated ? [
     { to: '/profile', label: 'Profile', icon: <User size={18} /> },
@@ -43,7 +43,7 @@ function Navbar() {
 
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'bg-white shadow-md py-2' : 'bg-gradient-to-r from-primary-50/80 to-neutral-50/80 backdrop-blur-md py-3'
+      className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 ${scrolled ? 'bg-white shadow-md py-2' : 'bg-gradient-to-r from-primary-50/80 to-neutral-50/80 backdrop-blur-md py-3'
         }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}

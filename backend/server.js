@@ -31,27 +31,33 @@ const allowedOrigins = process.env.CORS_ORIGINS
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow server-to-server & health checks
+      // allow server-to-server & health checks (no origin header)
       if (!origin) return callback(null, true);
 
-      // If no origins are configured, allow all in non-production for convenience,
-      // but log a warning in production so ops can set CORS_ORIGINS.
+      // In production, ALWAYS require CORS_ORIGINS to be configured
+      if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
+        console.error("CORS ERROR: CORS_ORIGINS not configured in production!");
+        return callback(new Error("CORS: Configuration required in production"));
+      }
+
+      // In development, if no origins configured, allow all for convenience
       if (allowedOrigins.length === 0) {
-        if (process.env.NODE_ENV === "production") {
-          console.warn(
-            "CORS: no origins configured in CORS_ORIGINS; allowing all origins."
-          );
-        }
+        console.warn("CORS: development mode - allowing all origins. Configure CORS_ORIGINS in production!");
         return callback(null, true);
       }
 
+      // Check if origin is allowed
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(null, false);
+      // Reject disallowed origins
+      console.warn(`CORS: Origin rejected: ${origin}`);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -61,13 +67,21 @@ app.use(
 
 export const io = new Server(server, {
   cors: {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    callback(null, true);
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.length === 0) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // 🔧 FIX: do NOT allow all origins
+      return callback(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST"],
+    credentials: true,
   },
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
-},
 });
 
 io.on("connection", (socket) => {
@@ -167,7 +181,6 @@ const startServer = async () => {
       process.exit(1);
     }
 
-    // Connect to MongoDB
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB Connected");
 
@@ -186,7 +199,6 @@ const startServer = async () => {
       startStreakMonitor();
     });
 
-    // Graceful shutdown: close HTTP server and MongoDB connection
     const gracefulExit = (signal) => {
       console.log(`${signal} received. Shutting down...`);
       server.close(() => {
@@ -199,7 +211,6 @@ const startServer = async () => {
 
     process.on("SIGINT", () => gracefulExit("SIGINT"));
     process.on("SIGTERM", () => gracefulExit("SIGTERM"));
-
   } catch (err) {
     if (err.code === "EADDRINUSE") {
       console.error(`Port ${process.env.PORT || 5000} is already in use!`);

@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -18,7 +19,7 @@ function App() {
   const authExcludedRoutes = ["/login", "/signup"];
 
   return (
-    <>
+    <ErrorBoundary>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -35,7 +36,7 @@ function App() {
       </Routes>
 
       {isAuthenticated && !authExcludedRoutes.includes(location.pathname) && <ChatBot />}
-    </>
+    </ErrorBoundary>
   );
 }
 
