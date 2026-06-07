@@ -20,23 +20,12 @@ const Signup = () => {
     setError("");
     setLoading(true);
 
-    // Construct API URL with fallback for localhost development
-    const backendURL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    const apiURL = `${backendURL}/api/auth/signup`;
-    // send signup request
-
     try {
-      const res = await axios.post(apiURL, form);
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/signup`, form);
       localStorage.setItem("token", res.data.token);
       navigate("/dashboard");
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Something went wrong";
-      console.error("❌ Signup failed:", {
-        status: err.response?.status,
-        message: errorMessage,
-        error: err.message
-      });
-      setError(errorMessage);
+      setError(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }

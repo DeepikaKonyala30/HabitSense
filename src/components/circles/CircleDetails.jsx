@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import CircleFeed from "./CircleFeed";
 import JoinRequestsPanel from "./JoinRequestsPanel";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
 
 const CircleDetails = ({ circleId, onBack, currentUserId }) => {
     const [circle, setCircle] = useState(null);
@@ -42,32 +42,17 @@ const CircleDetails = ({ circleId, onBack, currentUserId }) => {
             setLoading(true);
             const token = localStorage.getItem("token");
 
-            if (!token) {
-                console.error("❌ No token for fetching circle");
-                throw new Error("Authentication required");
-            }
-
-            const apiURL = `${API_URL}/api/circles/${circleId}`;
-            console.log(`📡 GET request to: ${apiURL}`);
-
-            const res = await axios.get(apiURL, {
+            const res = await axios.get(`${API_URL}/api/circles/${circleId}`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: userLocation
                     ? { lat: userLocation.lat, lng: userLocation.lng }
                     : {},
             });
 
-            console.log("✓ Circle details fetched:", res.data?.circle);
             setCircle(res.data?.circle || null);
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || "Failed to load circle";
-            console.error("❌ Fetch circle error:", {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/${circleId}`,
-                details: error.response?.data
-            });
-            toast.error(errorMsg);
+            console.error("Fetch circle error:", error);
+            toast.error(error.response?.data?.message || "Failed to load circle");
         } finally {
             setLoading(false);
         }
@@ -87,26 +72,15 @@ const CircleDetails = ({ circleId, onBack, currentUserId }) => {
 
         try {
             const token = localStorage.getItem("token");
-            if (!token) throw new Error("Authentication required");
-
-            const apiURL = `${API_URL}/api/circles/${circleId}`;
-            console.log(`📡 DELETE request to: ${apiURL}`);
-
-            const res = await axios.delete(apiURL, {
+            const res = await axios.delete(`${API_URL}/api/circles/${circleId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            console.log("✓ Circle deleted successfully");
             toast.success(res.data?.message || "Circle deleted");
             onBack();
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || "Failed to delete circle";
-            console.error("❌ Delete error:", {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/${circleId}`
-            });
-            toast.error(errorMsg);
+            console.error("Delete error:", error);
+            toast.error(error.response?.data?.message || "Failed to delete circle");
         }
     };
 
@@ -116,28 +90,17 @@ const CircleDetails = ({ circleId, onBack, currentUserId }) => {
 
         try {
             const token = localStorage.getItem("token");
-            if (!token) throw new Error("Authentication required");
-
-            const apiURL = `${API_URL}/api/circles/${circleId}/exit`;
-            console.log(`📡 POST request to: ${apiURL}`);
-
             const res = await axios.post(
-                apiURL,
+                `${API_URL}/api/circles/${circleId}/exit`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            console.log("✓ Exited circle successfully");
             toast.success(res.data?.message || "Exited circle");
             onBack();
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || "Failed to exit circle";
-            console.error("❌ Exit error:", {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/${circleId}/exit`
-            });
-            toast.error(errorMsg);
+            console.error("Exit error:", error);
+            toast.error(error.response?.data?.message || "Failed to exit circle");
         }
     };
 

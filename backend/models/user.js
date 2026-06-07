@@ -17,14 +17,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  bio: {
-    type: String,
-    default: "Tell us about yourself",
-  },
-  profileImage: {
-    type: String, // store base64 string
-    default: "",
-  },
   location: {
     type: {
       type: String,

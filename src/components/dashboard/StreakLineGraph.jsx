@@ -52,8 +52,8 @@ const StreakLineGraph = ({ habits }) => {
             transition={{ duration: 0.5, delay: 0.1 }}
         >
             <h3 className="text-lg font-display font-bold text-neutral-900 mb-4">Streak Growth (30 Days)</h3>
-            <div style={{ width: '100%', height: 320 }}>
-                <ResponsiveContainer width="100%" height={320}>
+            <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                         <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} minTickGap={20} />

@@ -11,7 +11,7 @@ const setAuthTokenHeader = (token) => {
   }
 };
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();  // <-- get navigate
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = useCallback(async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/me`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/auth/me`);
       setUser(response.data.user);  // make sure you access user object
       setIsAuthenticated(true);
       setError(null);
@@ -73,20 +73,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [fetchUser]);
 
-  const updateUser = async (data) => {
-    try {
-      const response = await axios.put(
-      `${import.meta.env.VITE_API_URL}/api/auth/update`,data);
-      if (response.data.success) {
-        setUser(response.data.user);
-        return true;
-      }
-    } catch (err) {
-      console.error("Profile update failed:", err);
-      return false;
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -96,8 +82,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         error,
-        fetchUser,
-        updateUser,  // <-- add updateUser to context
+        fetchUser
       }}
     >
       {children}

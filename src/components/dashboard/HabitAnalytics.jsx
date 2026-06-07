@@ -37,8 +37,8 @@ const HabitAnalytics = ({ habits }) => {
             transition={{ duration: 0.4 }}
         >
             <h3 className="text-lg font-display font-bold text-neutral-900 mb-4">Today's Overview</h3>
-            <div style={{ width: '100%', height: 320 }}>
-                <ResponsiveContainer width="100%" height={320}>
+            <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
                             data={data}

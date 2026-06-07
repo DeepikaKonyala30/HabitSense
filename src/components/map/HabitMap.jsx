@@ -80,7 +80,7 @@ const HabitMap = () => {
     const [myLocation, setMyLocation] = useState(null);
 
     const token = localStorage.getItem('token');
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5003';
 
     let currentUserId = null;
     if (token) {
@@ -155,8 +155,7 @@ const HabitMap = () => {
             });
 
             // Filter only circles with valid coordinates
-            const dataToFilter = Array.isArray(res.data) ? res.data : (res.data.circles || []);
-            const validCircles = dataToFilter.filter(
+            const validCircles = (res.data.circles || []).filter(
                 c => c.location?.coordinates && Array.isArray(c.location.coordinates) && c.location.coordinates.length === 2
             );
             setCircles(validCircles);
@@ -230,7 +229,7 @@ const HabitMap = () => {
     );
 
     return (
-        <div className="mt-[80px] pt-8 pb-8 px-4 max-w-7xl mx-auto min-h-screen">
+        <div className="pt-24 pb-8 px-4 max-w-7xl mx-auto min-h-screen">
             <motion.div
                 className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4"
                 initial={{ opacity: 0, y: -20 }}

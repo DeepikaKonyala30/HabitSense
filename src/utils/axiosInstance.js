@@ -1,10 +1,8 @@
 // src/utils/axiosInstance.js
 import axios from "axios";
 
-// 🔧 AXIOS INSTANCE CONFIGURATION for localhost development
-// Backend URL matches server PORT (http://localhost:5000)
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: "http://localhost:5000/api", // your backend base URL
 });
 
 // Add token automatically to every request

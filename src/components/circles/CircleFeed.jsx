@@ -3,7 +3,7 @@ import axios from 'axios';
 import CirclePostCard from './CirclePostCard';
 import { Image, Send } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
 
 const CircleFeed = ({ circleId, currentUserId }) => {
     const [posts, setPosts] = useState([]);
@@ -19,32 +19,17 @@ const CircleFeed = ({ circleId, currentUserId }) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            if (!token) {
-                console.error('❌ No token for fetching posts');
-                throw new Error('Authentication required');
-            }
-
-            const apiURL = `${API_URL}/api/circles/${circleId}/posts`;
-            console.log(`📡 GET request to: ${apiURL}`);
-
-            const res = await axios.get(apiURL, {
+            const res = await axios.get(`${API_URL}/api/circles/${circleId}/posts`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
             if (res.data.success && Array.isArray(res.data.posts)) {
-                console.log(`✓ Fetched ${res.data.posts.length} posts`);
                 setPosts(res.data.posts);
             } else {
-                console.warn('⚠️ Unexpected response structure:', res.data);
                 setPosts([]);
             }
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || 'Failed to fetch posts';
-            console.error('❌ Error fetching posts:', {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/${circleId}/posts`
-            });
+            console.error('Error fetching posts:', error);
             setPosts([]);
         } finally {
             setLoading(false);
@@ -58,35 +43,18 @@ const CircleFeed = ({ circleId, currentUserId }) => {
         setSubmitting(true);
         try {
             const token = localStorage.getItem('token');
-            if (!token) {
-                console.error('❌ No token for creating post');
-                throw new Error('Authentication required');
-            }
-
-            const apiURL = `${API_URL}/api/circles/${circleId}/post`;
-            console.log(`📡 POST request to: ${apiURL}`);
-            console.log(`📋 Content:`, newPostContent);
-
             const res = await axios.post(
-                apiURL,
+                `${API_URL}/api/circles/${circleId}/post`,
                 { content: newPostContent },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
             if (res.data.success && res.data.post) {
-                console.log('✓ Post created successfully');
                 setPosts(prev => [res.data.post, ...prev]);
                 setNewPostContent('');
-            } else {
-                console.warn('⚠️ Unexpected response:', res.data);
             }
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || 'Error creating post';
-            console.error('❌ Error creating post:', {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/${circleId}/post`
-            });
+            console.error('Error creating post:', error);
         } finally {
             setSubmitting(false);
         }

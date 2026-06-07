@@ -11,59 +11,39 @@ import NotificationsDropdown from '../components/NotificationsDropdown';
 import StreakBarGraph from '../components/dashboard/StreakBarGraph';
 import StreakLineGraph from '../components/dashboard/StreakLineGraph';
 import HabitAnalytics from '../components/dashboard/HabitAnalytics';
-import EmptyState from '../components/EmptyState';
-import LoadingSkeleton from '../components/LoadingSkeleton';
 import { toast } from 'react-hot-toast';
 
 
-const StatsCard = ({ title, value, icon, gradient }) => (
+const StatsCard = ({ title, value, icon, color, gradient }) => (
   <motion.div
-    className={`rounded-2xl p-6 bg-gradient-to-br ${gradient} border border-white/10 shadow-premium backdrop-blur-sm flex items-center gap-4 hover:shadow-elevated transition-all duration-300 overflow-hidden group`}
-    whileHover={{ scale: 1.05, y: -4 }}
+    className={`rounded-2xl p-6 bg-gradient-to-br ${gradient} border border-white/20 shadow-2xl backdrop-blur-lg flex items-center gap-4 hover:shadow-3xl transition-all duration-300 relative overflow-hidden`}
+    whileHover={{ scale: 1.05, y: -5 }}
     transition={{ duration: 0.3 }}
   >
-    {/* Animated background gradient */}
-    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    
-    {/* Icon container */}
-    <motion.div 
-      className="rounded-xl p-3 bg-white/20 backdrop-blur-sm text-white shadow-lg relative z-10"
-      whileHover={{ scale: 1.1, rotate: 5 }}
-      transition={{ type: 'spring' }}
-    >
-      {icon}
-    </motion.div>
-    
-    {/* Text content */}
-    <div className="relative z-10">
+    <div className={`rounded-xl p-3 bg-white/20 backdrop-blur-sm text-white shadow-lg`}>{icon}</div>
+    <div>
       <p className="text-white/80 text-xs font-semibold uppercase tracking-wider mb-1">{title}</p>
-      <motion.p 
-        className="text-3xl font-display font-extrabold text-white"
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        {value}
-      </motion.p>
+      <p className="text-2xl font-extrabold text-white">{value}</p>
     </div>
+    <div className="absolute -bottom-2 -right-2 w-16 h-16 bg-gradient-to-br from-current/10 to-transparent rounded-full"></div>
   </motion.div>
 );
 
 const DateButton = ({ date, isToday, isSelected, onClick }) => (
   <motion.button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center px-4 py-3 rounded-xl min-w-[3.5rem] transition-all font-semibold border-2 ${isSelected
-      ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white border-primary-600 shadow-lg'
+    className={`flex flex-col items-center justify-center p-4 rounded-2xl min-w-[4rem] transition-all font-semibold border-2 backdrop-blur-sm ${isSelected
+      ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white border-purple-600 shadow-xl'
       : isToday
-        ? 'bg-gradient-to-br from-success-400 to-success-500 text-white border-success-400 shadow-lg'
-        : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50 hover:border-primary-300 hover:shadow-soft'
+        ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white border-yellow-400 shadow-lg'
+        : 'bg-white/80 text-neutral-700 border-neutral-200 hover:bg-white hover:border-purple-300 hover:shadow-lg'
       }`}
     whileHover={{ scale: 1.08, y: -2 }}
     whileTap={{ scale: 0.95 }}
     aria-label={`Select ${format(date, 'EEEE, MMMM d')}`}
   >
     <span className="text-xs uppercase tracking-wider font-bold">{format(date, 'EEE')}</span>
-    <span className="text-lg font-display font-bold">{format(date, 'd')}</span>
+    <span className="text-lg font-extrabold">{format(date, 'd')}</span>
   </motion.button>
 );
 
@@ -83,7 +63,7 @@ function Dashboard() {
   const [submittedMissedIds, setSubmittedMissedIds] = useState([]);
   const [restoreChances, setRestoreChances] = useState(0);
   const navigate = useNavigate();
-  const { habits, completedToday, streakCount, longestStreak, loading, error: habitsError, refetch, addHabit, completeHabit, deleteHabit, updateHabitState } = useHabits();
+  const { habits, completedToday, streakCount, longestStreak, loading, error: habitsError, refetch, addHabit, completeHabit, deleteHabit } = useHabits();
 
   // Filter habits into active and missed for stats calculations
   const activeHabits = habits.filter(habit => habit.status !== 'missed');
@@ -100,7 +80,7 @@ function Dashboard() {
         if (!token) {
           throw new Error('Please log in to access the dashboard');
         }
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
@@ -138,7 +118,7 @@ function Dashboard() {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/motivation/history`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/motivation/history`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -156,7 +136,7 @@ function Dashboard() {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/streak-restore/chances`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/streak-restore/chances`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -188,7 +168,7 @@ function Dashboard() {
   // Handler for AI motivation response
   const handleMotivation = async (habitId, habitName, reason) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/motivation/missed`, {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/motivation/missed`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -225,25 +205,21 @@ function Dashboard() {
   };
 
   // Handler for streak restoration
-  const handleRestore = async (data) => {
-    if (data && data.success) {
+  const handleRestore = async (habitId) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/streak-restore/restore`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ habitId }),
+    });
+    const data = await res.json();
+    if (data.success) {
       toast.success(`Streak restored for ${data.habitName}!`);
-
-      // Get the locally stored habit to update its state
-      const existingHabit = habits.find(h => h._id === selectedHabitId);
-      if (existingHabit) {
-        const completedDates = [...(existingHabit.completedDates || [])];
-        const dateToAdd = new Date(selectedDate.toISOString().split('T')[0]);
-        completedDates.push(dateToAdd);
-
-        // Update the specific habit correctly
-        updateHabitState(selectedHabitId, {
-          completedDates,
-          status: 'active' // change from 'missed' if applicable
-        });
-      }
-
-      // Refresh restore chances
+      // Refresh habits and restore chances
+      await refetch();
       await fetchRestoreChances();
       // Close the modal after successful restore
       setShowMissedModal(false);
@@ -251,6 +227,7 @@ function Dashboard() {
       setSelectedHabitName('');
       return data;
     }
+    throw new Error(data.message || 'Failed to restore streak');
   };
 
   // Handler for closing modal and removing habit from dashboard
@@ -258,7 +235,7 @@ function Dashboard() {
     if (selectedHabitId) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/habits/${selectedHabitId}`, {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/habits/${selectedHabitId}`, {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -324,28 +301,14 @@ function Dashboard() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-neutral-50 pt-20 pb-8">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header skeleton */}
-          <motion.div
-            className="mb-8 animate-pulse"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <div className="h-10 bg-neutral-200 rounded-lg w-1/3 mb-4" />
-            <div className="h-4 bg-neutral-100 rounded-lg w-1/2" />
-          </motion.div>
-
-          {/* Stats skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-neutral-200 rounded-2xl animate-pulse" />
-            ))}
-          </div>
-
-          {/* Habits skeleton */}
-          <LoadingSkeleton />
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-8 h-8 border-4 border-t-primary-600 border-neutral-200 rounded-full"
+          role="status"
+          aria-label="Loading"
+        />
       </div>
     );
   }
@@ -367,7 +330,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden pt-20 pb-8" style={{
+    <div className="min-h-screen relative overflow-hidden pt-16 pb-8" style={{
       backgroundImage: 'url(/bg.jpg)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
@@ -542,56 +505,43 @@ function Dashboard() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, staggerChildren: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0 }}
-          >
-            <StatsCard
-              title="Today's Progress"
-              value={totalActiveHabits > 0 ? `${completedToday}/${totalActiveHabits}` : '0/0'}
-              icon={<ListChecks size={24} />}
-              gradient="from-primary-500 to-primary-600"
-            />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-          >
-            <StatsCard
-              title="Current Streak"
-              value={`${streakCount} days`}
-              icon={<Flame size={24} />}
-              gradient="from-accent-500 to-accent-600"
-            />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <StatsCard
-              title="Longest Streak"
-              value={`${longestStreak} days`}
-              icon={<Trophy size={24} />}
-              gradient="from-success-400 to-success-600"
-            />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <StatsCard
-              title="Restore Chances"
-              value={`${restoreChances}/5`}
-              icon={<RotateCcw size={24} />}
-              gradient="from-warning-400 to-warning-600"
-            />
-          </motion.div>
+          <StatsCard
+            title="Today's Progress"
+            value={totalActiveHabits > 0 ? `${completedToday}/${totalActiveHabits}` : '0/0'}
+            icon={<ListChecks size={24} />}
+            color="border-primary-100"
+            gradient="bg-gradient-to-br from-blue-500 to-purple-600"
+          />
+          <StatsCard
+            title="Current Streak"
+            value={`${streakCount} days`}
+            icon={<Flame size={24} />}
+            color="border-secondary-100"
+            gradient="bg-gradient-to-br from-orange-500 to-red-600"
+          />
+          <StatsCard
+            title="Longest Streak"
+            value={`${longestStreak} days`}
+            icon={<Trophy size={24} />}
+            color="border-cyan-100"
+            gradient="bg-gradient-to-br from-yellow-500 to-orange-600"
+          />
+          <StatsCard
+            title="Restore Chances"
+            value={`${restoreChances}/5`}
+            icon={<RotateCcw size={24} />}
+            color="border-amber-100"
+            gradient="bg-gradient-to-br from-amber-500 to-yellow-600"
+          />
+          <StatsCard
+            title="Active Habits"
+            value={totalActiveHabits}
+            icon={<Clock size={24} />}
+            color="border-emerald-100"
+            gradient="bg-gradient-to-br from-green-500 to-emerald-600"
+          />
         </motion.div>
 
         {/* Date Selector */}
@@ -633,7 +583,23 @@ function Dashboard() {
             <>
               {/* Active Habits Section */}
               {activeHabits.length === 0 && missedHabits.length === 0 ? (
-                <EmptyState onAddHabit={() => setShowAddModal(true)} />
+                <motion.div
+                  className="text-center py-12 bg-white rounded-xl border border-neutral-200 shadow-soft"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  <h3 className="text-lg font-semibold text-neutral-900 mb-2">No habits yet</h3>
+                  <p className="text-neutral-600 mb-4 text-sm">Start building your first habit today!</p>
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 flex items-center gap-2 mx-auto"
+                    aria-label="Add your first habit"
+                  >
+                    <PlusCircle size={18} />
+                    <span>Add Your First Habit</span>
+                  </button>
+                </motion.div>
               ) : (
                 <motion.div
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -753,7 +719,6 @@ function Dashboard() {
           onClose={handleCloseModal}
           habitId={selectedHabitId}
           habitName={selectedHabitName}
-          missedDate={selectedDate.toISOString().split('T')[0]}
           onMotivation={handleMotivation}
           onRestore={handleRestore}
           restoreChances={restoreChances}

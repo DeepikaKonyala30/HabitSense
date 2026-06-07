@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-function MissedStreakModal({ open, onClose, habitId, habitName, missedDate, onMotivation, onRestore, restoreChances }) {
+function MissedStreakModal({ open, onClose, habitId, habitName, onMotivation, onRestore, restoreChances }) {
   const [explanation, setExplanation] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,34 +35,10 @@ function MissedStreakModal({ open, onClose, habitId, habitName, missedDate, onMo
   const handleRestore = async () => {
     setRestoring(true);
     setError('');
-
-    if (!habitId || !missedDate) {
-      console.error('Missing required values:', { habitId, missedDate });
-      setError('Missing habit ID or missed date');
-      setRestoring(false);
-      return;
-    }
-
-    console.log('Sending restore request with values:', { habitId, missedDate });
-
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/streak-restore/restore`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ habitId, missedDate }),
-      });
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to restore streak');
-      }
-
-      console.log('Restore result:', data);
-      await onRestore(data);
+      const result = await onRestore(habitId);
+      console.log('Restore result:', result);
+      // The modal will be closed by the parent component (Dashboard)
     } catch (err) {
       console.error('Restore error:', err);
       setError(err.message);

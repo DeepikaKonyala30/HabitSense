@@ -6,7 +6,7 @@ import CircleList from '../components/circles/CircleList';
 import CreateCircleModal from '../components/circles/CreateCircleModal';
 import CircleDetails from '../components/circles/CircleDetails';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
 
 function HabitCircles() {
   const [activeTab, setActiveTab] = useState('myCircles'); // 'myCircles' or 'discover'
@@ -30,12 +30,7 @@ function HabitCircles() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('❌ No authentication token');
-        return;
-      }
-
-      // fetching user data and circles
+      if (!token) return;
 
       // 1. Get current user's ID
       const userRes = await axios.get(`${API_URL}/api/auth/me`, {
@@ -49,7 +44,6 @@ function HabitCircles() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const allCircles = circlesRes.data.circles;
-      // received circles
 
       // 3. Separate into Discover vs My Circles
       // If the user's ID is in the members array, it's "myCircle"
@@ -59,12 +53,7 @@ function HabitCircles() {
       setMyCircles(my);
       setDiscoverCircles(discover);
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Error fetching circles';
-      console.error('❌ Error fetching data:', {
-        status: error.response?.status,
-        message: errorMsg,
-        url: `${API_URL}/api/circles`
-      });
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -78,27 +67,15 @@ function HabitCircles() {
   const handleJoinCircle = async (circle) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error('Authentication required');
-
-      const apiURL = `${API_URL}/api/circles/${circle._id}/join`;
-      // posting join request
-
-      const res = await axios.post(apiURL, {}, {
+      const res = await axios.post(`${API_URL}/api/circles/${circle._id}/join`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
       alert(res.data.message);
 
       // Re-fetch to update lists
       fetchUserDataAndCircles();
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Error joining circle';
-      console.error('❌ Error joining circle:', {
-        status: error.response?.status,
-        message: errorMsg,
-        circleId: circle._id
-      });
-      alert(errorMsg);
+      alert(error.response?.data?.message || 'Error joining circle');
     }
   };
 

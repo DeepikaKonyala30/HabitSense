@@ -3,7 +3,7 @@ import { Heart, MessageCircle, Send } from 'lucide-react';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
 
 const CirclePostCard = ({ post, currentUserId, onPostUpdated }) => {
     const [showComments, setShowComments] = useState(false);
@@ -18,26 +18,14 @@ const CirclePostCard = ({ post, currentUserId, onPostUpdated }) => {
     const handleToggleLike = async () => {
         try {
             const token = localStorage.getItem('token');
-            if (!token) throw new Error('Authentication required');
-
-            const apiURL = `${API_URL}/api/circles/posts/${post._id}/like`;
-            console.log(`📡 POST request to: ${apiURL}`);
-
             await axios.post(
-                apiURL,
+                `${API_URL}/api/circles/posts/${post._id}/like`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-
-            console.log('✓ Like toggled successfully');
             onPostUpdated();
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || 'Error toggling like';
-            console.error('❌ Error toggling like:', {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/posts/${post._id}/like`
-            });
+            console.error('Error toggling like:', error);
         }
     };
 
@@ -48,28 +36,15 @@ const CirclePostCard = ({ post, currentUserId, onPostUpdated }) => {
         setSubmitting(true);
         try {
             const token = localStorage.getItem('token');
-            if (!token) throw new Error('Authentication required');
-
-            const apiURL = `${API_URL}/api/circles/posts/${post._id}/comment`;
-            console.log(`📡 POST request to: ${apiURL}`);
-            console.log(`📋 Comment:`, newComment);
-
             await axios.post(
-                apiURL,
+                `${API_URL}/api/circles/posts/${post._id}/comment`,
                 { content: newComment },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-
-            console.log('✓ Comment posted successfully');
             setNewComment('');
             onPostUpdated();
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || 'Error commenting';
-            console.error('❌ Error commenting:', {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/posts/${post._id}/comment`
-            });
+            console.error('Error commenting:', error);
         } finally {
             setSubmitting(false);
         }

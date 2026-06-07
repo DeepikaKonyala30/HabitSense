@@ -16,6 +16,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (error) {
+    console.log("ProtectedRoute: Error occurred:", error); // Debug
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="text-center">
@@ -30,6 +31,8 @@ const ProtectedRoute = ({ children }) => {
       </div>
     );
   }
+
+  console.log("ProtectedRoute: isAuthenticated:", isAuthenticated); // Debug
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 

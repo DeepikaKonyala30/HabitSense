@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { X, MapPin } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
 
 const CreateCircleModal = ({ onClose, onCircleCreated }) => {
     const [formData, setFormData] = useState({
@@ -47,12 +47,7 @@ const CreateCircleModal = ({ onClose, onCircleCreated }) => {
 
         try {
             const token = localStorage.getItem('token');
-            if (!token) {
-                console.error('❌ No authentication token found');
-                throw new Error('Not authenticated');
-            }
-
-            console.log('✓ Form submit fired - Creating circle');
+            if (!token) throw new Error('Not authenticated');
 
             const payload = { ...formData };
             if (location) {
@@ -60,25 +55,13 @@ const CreateCircleModal = ({ onClose, onCircleCreated }) => {
                 payload.longitude = location.longitude;
             }
 
-            const apiURL = `${API_URL}/api/circles`;
-            console.log(`📡 POST request to: ${apiURL}`);
-            console.log(`📋 Payload:`, payload);
-
-            const res = await axios.post(apiURL, payload, {
+            const res = await axios.post(`${API_URL}/api/circles`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            console.log('✓ Circle created successfully:', res.data.circle);
             onCircleCreated(res.data.circle);
         } catch (err) {
-            const errorMsg = err.response?.data?.message || err.message || 'Error creating circle';
-            console.error('❌ Circle creation failed:', {
-                status: err.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles`,
-                details: err.response?.data
-            });
-            setError(errorMsg);
+            setError(err.response?.data?.message || err.message || 'Error creating circle');
         } finally {
             setLoading(false);
         }

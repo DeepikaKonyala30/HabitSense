@@ -37,7 +37,7 @@ const Login = () => {
   // This helper calls your backend login and then your AuthContext login with the token
   const loginWithCredentials = async (email, password) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

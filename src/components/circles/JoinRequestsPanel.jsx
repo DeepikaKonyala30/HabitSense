@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Check, X } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
 
 const JoinRequestsPanel = ({ circleId, onUpdate }) => {
     const [requests, setRequests] = useState([]);
@@ -15,27 +15,12 @@ const JoinRequestsPanel = ({ circleId, onUpdate }) => {
     const fetchRequests = async () => {
         try {
             const token = localStorage.getItem('token');
-            if (!token) {
-                console.error('❌ No token for fetching join requests');
-                throw new Error('Authentication required');
-            }
-
-            const apiURL = `${API_URL}/api/circles/${circleId}/requests`;
-            console.log(`📡 GET request to: ${apiURL}`);
-
-            const res = await axios.get(apiURL, {
+            const res = await axios.get(`${API_URL}/api/circles/${circleId}/requests`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
-            console.log(`✓ Fetched ${res.data.requests?.length || 0} join requests`);
             setRequests(res.data.requests || []);
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || 'Failed to fetch requests';
-            console.error('❌ Error fetching join requests:', {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/${circleId}/requests`
-            });
+            console.error('Error fetching join requests:', error);
         } finally {
             setLoading(false);
         }
@@ -44,27 +29,16 @@ const JoinRequestsPanel = ({ circleId, onUpdate }) => {
     const handleAction = async (requestId, action) => {
         try {
             const token = localStorage.getItem('token');
-            if (!token) throw new Error('Authentication required');
-
-            const apiURL = `${API_URL}/api/circles/requests/${requestId}/${action}`;
-            console.log(`📡 POST request to: ${apiURL}`);
-
-            await axios.post(apiURL, {}, {
+            await axios.post(`${API_URL}/api/circles/requests/${requestId}/${action}`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            console.log(`✓ Request ${action}ed successfully`);
             // Remove handled request from list immediately
             setRequests(prev => prev.filter(r => r._id !== requestId));
 
             if (action === 'approve') onUpdate(); // Refresh circle details on approval
         } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || `Error trying to ${action} request`;
-            console.error(`❌ Error trying to ${action} request:`, {
-                status: error.response?.status,
-                message: errorMsg,
-                url: `${API_URL}/api/circles/requests/${requestId}/${action}`
-            });
+            console.error(`Error trying to ${action} request:`, error);
         }
     };
 

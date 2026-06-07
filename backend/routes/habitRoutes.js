@@ -29,20 +29,8 @@ const validateInput = (data, requiredFields) => {
   if (data.frequency && !['daily', 'weekly'].includes(data.frequency)) {
     throw new ApiError(400, 'Frequency must be "daily" or "weekly"');
   }
-  if (data.target && (isNaN(data.target) || data.target < 1 || data.target > 7)) {
-    throw new ApiError(400, 'Target must be a positive number between 1 and 7');
-  }
-  
-  // Validate time format (HH:mm)
-  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-  if (data.time && data.time && !timeRegex.test(data.time)) {
-    throw new ApiError(400, 'Time must be in HH:mm format (e.g., 14:30)');
-  }
-  if (data.timeFrom && data.timeFrom && !timeRegex.test(data.timeFrom)) {
-    throw new ApiError(400, 'Start time must be in HH:mm format');
-  }
-  if (data.timeTo && data.timeTo && !timeRegex.test(data.timeTo)) {
-    throw new ApiError(400, 'End time must be in HH:mm format');
+  if (data.target && (isNaN(data.target) || data.target < 1)) {
+    throw new ApiError(400, 'Target must be a positive number');
   }
 };
 
@@ -87,31 +75,16 @@ const calculateStreak = (completedDates, frequency, target) => {
 // Calculate habit status based on current date and completion
 const calculateStatus = (completedDates, frequency, target, createdAt, time, timeFrom, timeTo) => {
   const today = format(new Date(), 'yyyy-MM-dd');
-  
-  // Normalize completedDates to ensure they're strings (YYYY-MM-DD format)
-  const completedDateStrings = (completedDates || []).map(date => {
-    if (typeof date === 'string') {
-      return date.split('T')[0]; // Remove time portion if it exists
-    }
-    return format(new Date(date), 'yyyy-MM-dd');
-  });
-  
-  const todayCompleted = completedDateStrings.includes(today);
+  const todayCompleted = completedDates.includes(today);
 
   if (todayCompleted) {
     return 'completed';
   }
 
-  // Do not mark habit as missed on the same day it was created
-  const createdDate = format(new Date(createdAt), 'yyyy-MM-dd');
-  if (createdDate === today) {
-    return 'pending';
-  }
-  
   // Check if today is a missed day for daily habits
   if (frequency === 'daily') {
     const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
-    const yesterdayCompleted = completedDateStrings.includes(yesterday);
+    const yesterdayCompleted = completedDates.includes(yesterday);
 
     // Only mark as missed if the habit was created before yesterday
     // This prevents newly created habits from being marked as missed
@@ -124,6 +97,7 @@ const calculateStatus = (completedDates, frequency, target, createdAt, time, tim
 
     // Time-based missed check for today
     const now = new Date();
+    const currentTimeStr = format(now, 'HH:mm');
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
 

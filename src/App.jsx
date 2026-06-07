@@ -1,5 +1,4 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -8,18 +7,16 @@ import Profile from './pages/Profile';
 import HabitCircles from './pages/HabitCircles';
 import HabitMap from './components/map/HabitMap';
 import NotFound from './pages/NotFound';
-import ChatBot from './pages/ChatBot';
+import ChatBot from './pages/Chatbot';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import { useAuth } from './context/useAuth';
 
 function App() {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
-  const authExcludedRoutes = ["/login", "/signup"];
+  const hideChatbot = ["/login", "/signup"].includes(location.pathname);
 
   return (
-    <ErrorBoundary>
+    <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -35,8 +32,8 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {isAuthenticated && !authExcludedRoutes.includes(location.pathname) && <ChatBot />}
-    </ErrorBoundary>
+      {!hideChatbot && <ChatBot />}
+    </>
   );
 }
 

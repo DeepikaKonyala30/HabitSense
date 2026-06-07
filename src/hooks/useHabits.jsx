@@ -14,19 +14,23 @@ const useHabits = () => {
   const { socket } = useSocket() || {};
 
   const fetchHabits = async () => {
-    // fetchHabits: start
+    console.log('useHabits: Starting fetchHabits');
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
+      console.log('useHabits: Token retrieved:', token ? 'Present' : 'Missing');
       if (!token) {
         throw new Error('No authentication token found');
       }
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/habits`, {
+
+      console.log('useHabits: Fetching habits from /api/habits');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/habits`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      console.log('useHabits: Response status:', response.status);
       if (!response.ok) {
         // try to extract a useful message from the response body
         let serverMsg = `HTTP error! Status: ${response.status}`;
@@ -40,15 +44,24 @@ const useHabits = () => {
       }
 
       const data = await response.json();
+      console.log('useHabits: Habits data received:', data);
       if (!data.success) {
         throw new Error(data.message || 'Failed to fetch habits');
       }
 
-      // habit list received (debug logs removed)
+      // Debug: Log all habit names to help user see what they have
+      console.log('useHabits: Your habits:', data.habits.map(h => ({
+        name: h.name,
+        id: h._id,
+        status: h.status,
+        frequency: h.frequency,
+        createdAt: h.createdAt
+      })));
 
       // Calculate stats and update state properly
       const updatedHabits = calculateStats(data.habits);
       setLoading(false);
+      console.log('useHabits: Habits fetched successfully, loading set to false');
       return data.habits; // Return the habits for external use
     } catch (err) {
       console.error('useHabits: Error in fetchHabits:', err.message);
@@ -92,12 +105,12 @@ const useHabits = () => {
   };
 
   const markHabitAsMissed = async (habitId) => {
-    // marking habit as missed
+    console.log(`useHabits: Attempting to mark habit as missed: ${habitId}`);
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Authentication token not found');
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/habits/${habitId}/miss`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/habits/${habitId}/miss`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -209,7 +222,7 @@ const useHabits = () => {
           try {
             const token = localStorage.getItem('token');
             if (token) {
-              fetch(`${import.meta.env.VITE_API_URL}/api/notifications`, {
+              fetch(`${import.meta.env.VITE_BACKEND_URL}/api/notifications`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(detail),
@@ -287,7 +300,7 @@ const useHabits = () => {
     console.log(`useHabits: Attempting to complete habit with id: ${id} for date: ${date}`);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/habits/${id}/complete`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/habits/${id}/complete`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -321,7 +334,7 @@ const useHabits = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/habits`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/habits`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -355,15 +368,16 @@ const useHabits = () => {
   };
 
   const deleteHabit = async (id) => {
-    // attempting to delete habit
+    console.log(`useHabits: Attempting to delete habit with id: ${id}`);
     try {
       const token = localStorage.getItem('token');
+      console.log('useHabits: Token for delete:', token ? 'Present' : 'Missing');
 
       if (!token) {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/habits/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/habits/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -371,7 +385,7 @@ const useHabits = () => {
         },
       });
 
-      // delete response received
+      console.log('useHabits: Delete response status:', response.status);
 
       if (!response.ok) {
         let errorMessage = `HTTP error! Status: ${response.status}`;
@@ -387,12 +401,13 @@ const useHabits = () => {
       }
 
       const data = await response.json();
+      console.log('useHabits: Delete response data:', data);
 
       if (!data.success) {
         throw new Error(data.message || 'Failed to delete habit');
       }
 
-      // habit deleted successfully
+      console.log('useHabits: Habit deleted successfully:', data.message);
 
       // Show success toast
       toast.success('Habit deleted successfully!');
@@ -412,18 +427,8 @@ const useHabits = () => {
     }
   };
 
-  const updateHabitState = (id, newFields) => {
-    setHabits(prevHabits => {
-      const updatedHabits = prevHabits.map(habit =>
-        habit._id === id ? { ...habit, ...newFields } : habit
-      );
-      calculateStats(updatedHabits);
-      return updatedHabits;
-    });
-  };
-
   const calculateStats = (habits) => {
-    // calculating stats for habits
+    console.log('useHabits: Calculating stats for habits:', habits);
     const today = format(new Date(), 'yyyy-MM-dd');
     let todayCount = 0;
     let currentStreak = 0;
@@ -431,6 +436,7 @@ const useHabits = () => {
 
     const updatedHabits = [];
     habits.forEach((habit) => {
+      console.log(`useHabits: Processing habit: ${habit.name}, frequency: ${habit.frequency}, status: ${habit.status}`);
       // Normalize completed dates into a set of yyyy-MM-dd strings for reliable checks
       const completedSet = new Set((habit.completedDates || []).map(d => format(new Date(d), 'yyyy-MM-dd')));
 
@@ -466,27 +472,23 @@ const useHabits = () => {
           }
         }
       } else if (habit.frequency === 'weekly') {
-          const weeks = {};
-          (habit.completedDates || []).forEach(d => {
-            const key = format(new Date(d), 'RRRR-II');
-            weeks[key] = (weeks[key] || 0) + 1;
-          });
+        // weekly logic unchanged but use completedSet-derived dates array
+        const dates = [...(habit.completedDates || [])].map(d => format(new Date(d), 'yyyy-MM-dd')).sort((a, b) => new Date(b) - new Date(a));
+        const weeks = {};
+        dates.forEach((date) => {
+          const weekStart = format(new Date(date), 'yyyy-WW');
+          weeks[weekStart] = (weeks[weekStart] || 0) + 1;
+        });
+        console.log(`useHabits: Weekly completions for ${habit.name}:`, weeks);
 
-          let cursor = new Date();
-
-          while (true) {
-            const key = format(cursor, 'RRRR-II');
-
-            if (weeks[key] && weeks[key] >= (habit.target || 1)) {
-              streak++;
-              cursor = subDays(cursor, 7);
-            } else {
-              break;
-            }
-          }
+        let currentWeek = format(new Date(), 'yyyy-WW');
+        while (weeks[currentWeek] && weeks[currentWeek] >= (habit.target || 1)) {
+          streak++;
+          currentWeek = format(subDays(new Date(currentWeek), 7), 'yyyy-WW');
         }
+      }
 
-      // computed streak for habit
+      console.log(`useHabits: Streak for ${habit.name}: ${streak}`);
       // attach per-habit streak so UI cards can display it
       updatedHabits.push({ ...habit, streak });
       if (streak > maxStreak) maxStreak = streak;
@@ -500,7 +502,7 @@ const useHabits = () => {
     setCompletedToday(todayCount);
     setStreakCount(currentStreak);
     setLongestStreak(maxStreak);
-    // stats updated
+    console.log('useHabits: Stats updated - completedToday:', todayCount, 'streakCount:', currentStreak, 'longestStreak:', maxStreak);
     // schedule notifications for habits with times
     try { scheduleNotifications(updatedHabits); } catch (err) { console.error('Failed to schedule notifications', err); }
 
@@ -537,8 +539,7 @@ const useHabits = () => {
     };
   }, [socket]);
 
-  return { habits, completedToday, streakCount, longestStreak, loading, error, refetch: fetchHabits, deleteHabit, completeHabit, addHabit, updateHabitState };
+  return { habits, completedToday, streakCount, longestStreak, loading, error, refetch: fetchHabits, deleteHabit, completeHabit, addHabit };
 };
 
 export default useHabits;
-

@@ -4,6 +4,7 @@ import Footer from './Footer';
 import { Toaster } from 'react-hot-toast';
 
 function Layout() {
+  console.log('Layout.jsx: Starting render');
   try {
     return (
       <div className="min-h-screen flex flex-col">

@@ -23,41 +23,23 @@ const server = http.createServer(app);
    ✅ CORS CONFIGURATION
 ========================= */
 
-// Configure allowed CORS origins from environment (comma-separated)
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
-  : [];
+const allowedOrigins = [
+  "https://streakmate.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5175",
+];
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // allow server-to-server & health checks (no origin header)
+    origin: function (origin, callback) {
       if (!origin) return callback(null, true);
-
-      // In production, ALWAYS require CORS_ORIGINS to be configured
-      if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
-        console.error("CORS ERROR: CORS_ORIGINS not configured in production!");
-        return callback(new Error("CORS: Configuration required in production"));
-      }
-
-      // In development, if no origins configured, allow all for convenience
-      if (allowedOrigins.length === 0) {
-        console.warn("CORS: development mode - allowing all origins. Configure CORS_ORIGINS in production!");
-        return callback(null, true);
-      }
-
-      // Check if origin is allowed
       if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
       }
-
-      // Reject disallowed origins
-      console.warn(`CORS: Origin rejected: ${origin}`);
-      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -67,19 +49,8 @@ app.use(
 
 export const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.length === 0) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      // 🔧 FIX: do NOT allow all origins
-      return callback(new Error("Not allowed by CORS"));
-    },
-    methods: ["GET", "POST"],
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
 });
@@ -165,26 +136,12 @@ app.get("/", (req, res) => {
    ✅ START SERVER
 ========================= */
 
-// Global error handlers to keep process stable and allow graceful shutdown
-process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled Rejection:", reason);
-});
-process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err);
-  process.exit(1);
-});
-
 const startServer = async () => {
   try {
-    if (!process.env.MONGO_URI) {
-      console.error("MONGO_URI environment variable is not set. Aborting startup.");
-      process.exit(1);
-    }
-
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB Connected");
 
-    const PORT = process.env.PORT ?? 5000;
+    const PORT = process.env.PORT || 5003;
 
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -199,21 +156,19 @@ const startServer = async () => {
       startStreakMonitor();
     });
 
-    const gracefulExit = (signal) => {
-      console.log(`${signal} received. Shutting down...`);
-      server.close(() => {
-        mongoose.connection.close(false, () => {
-          console.log("MongoDB connection closed.");
-          process.exit(0);
-        });
-      });
-    };
+    // Graceful shutdown
+    process.on("SIGINT", () => {
+      console.log("SIGINT received. Shutting down...");
+      server.close(() => process.exit(0));
+    });
+    process.on("SIGTERM", () => {
+      console.log("SIGTERM received. Shutting down...");
+      server.close(() => process.exit(0));
+    });
 
-    process.on("SIGINT", () => gracefulExit("SIGINT"));
-    process.on("SIGTERM", () => gracefulExit("SIGTERM"));
   } catch (err) {
     if (err.code === "EADDRINUSE") {
-      console.error(`Port ${process.env.PORT || 5000} is already in use!`);
+      console.error(`Port ${process.env.PORT || 5003} is already in use!`);
     } else {
       console.error("MongoDB Connection Failed:", err);
     }
