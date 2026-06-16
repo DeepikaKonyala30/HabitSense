@@ -1,6 +1,6 @@
 # 🚀 StreakMate  
 ### A Social Habit Tracking Platform Built for Consistency & Community
-**Live Demo:** https://streakie-lac.vercel.app/
+**Live Demo:** https://streakmate.vercel.app/
 
 StreakMate began with a simple observation:  
 Habit building isn’t just a grind. It’s emotional, social, and deeply human.
@@ -122,7 +122,7 @@ A structure focused on clarity, scalability, and separation of concerns.
 
 ## 📌 Deployment  
 - **Frontend:** Vercel
-- **Live:** https://streakie-lac.vercel.app/
+- **Live:** https://streakmate.vercel.app/
 - **Backend:** Render
 - Deployed REST API (secured via environment variables)
 
