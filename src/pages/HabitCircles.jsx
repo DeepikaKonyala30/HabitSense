@@ -6,7 +6,7 @@ import CircleList from '../components/circles/CircleList';
 import CreateCircleModal from '../components/circles/CreateCircleModal';
 import CircleDetails from '../components/circles/CircleDetails';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 function HabitCircles() {
   const [activeTab, setActiveTab] = useState('myCircles'); // 'myCircles' or 'discover'
@@ -45,10 +45,8 @@ function HabitCircles() {
       });
       const allCircles = circlesRes.data.circles;
 
-      // 3. Separate into Discover vs My Circles
-      // If the user's ID is in the members array, it's "myCircle"
-      const my = allCircles.filter(c => c.members.some(m => m._id === userId));
-      const discover = allCircles.filter(c => !c.members.some(m => m._id === userId));
+      const my = allCircles.filter(c => c.isMember);
+      const discover = allCircles.filter(c => !c.isMember);
 
       setMyCircles(my);
       setDiscoverCircles(discover);

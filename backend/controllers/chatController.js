@@ -27,7 +27,7 @@ export const sendMessage = async (req, res) => {
         const chatHistory = recentChats.reverse().map(c => `User: "${c.message}" | You: "${c.response}"`).join("\n");
 
         // Retrieve the user's active habits and streaks
-        const userHabits = await Habit.find({ user: userId });
+        const userHabits = await Habit.find({ user: userId, isDeleted: { $ne: true } });
         const habitsContext = userHabits.length > 0
           ? userHabits.map(h => `- ${h.name} (Streak: ${h.streak}, Status: ${h.status})`).join("\n")
           : "The user has no habits tracked yet.";

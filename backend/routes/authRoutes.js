@@ -3,6 +3,30 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
 import authMiddleware from '../middleware/authMiddleware.js';
+import rateLimit from 'express-rate-limit';
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per window
+  message: {
+    success: false,
+    message: 'Too many login attempts from this IP, please try again after 15 minutes',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const signupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Limit each IP to 5 requests per window
+  message: {
+    success: false,
+    message: 'Too many signup attempts from this IP, please try again after an hour',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 
 const signup = async (req, res) => {
   console.log("signup route hit");
@@ -48,9 +72,9 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        message: 'User not found',
+        message: 'Invalid email or password',
       });
     }
 
@@ -58,7 +82,7 @@ const login = async (req, res) => {
     if (!isPasswordCorrect) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Invalid email or password',
       });
     }
 
@@ -111,10 +135,37 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: 'If that email address exists in our database, we will send you an email to reset your password.',
+      });
+    }
+
+    console.log(`[Forgot Password] Reset request for ${email}. Token would be generated and sent.`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'If that email address exists in our database, we will send you an email to reset your password.',
+    });
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
 const router = express.Router();
 
-router.post('/signup', signup);
-router.post('/login', login);
+router.post('/signup', signupLimiter, signup);
+router.post('/login', loginLimiter, login);
+router.post('/forgot-password', forgotPassword);
 router.get('/dashboard', authMiddleware, getDashboard);
 router.get('/me', authMiddleware, getUserProfile);
 

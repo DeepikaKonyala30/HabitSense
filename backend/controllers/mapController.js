@@ -22,15 +22,19 @@ export const getNearbyUsers = async (req, res) => {
         // Step 1: Find circles the current user can see (public + private where user is member)
         const circles = await Circle.find({
             $or: [
-                { visibility: "public" },
-                { visibility: "private", members: currentUserId }
+                { privacy: "public" },
+                { privacy: "private", "members.user": currentUserId }
             ]
         }).select("members");
 
         // Collect all unique member IDs from these circles
         const allowedUserIds = new Set();
         circles.forEach(circle => {
-            circle.members.forEach(memberId => allowedUserIds.add(memberId.toString()));
+            circle.members.forEach(member => {
+                if (member.user) {
+                    allowedUserIds.add(member.user.toString());
+                }
+            });
         });
 
         // Remove current user from the set
@@ -61,7 +65,7 @@ export const getNearbyUsers = async (req, res) => {
         const userIds = nearbyUsers.map(u => u._id);
 
         // Step 3: Filter users by habit (if provided)
-        let habitQuery = { user: { $in: userIds } };
+        let habitQuery = { user: { $in: userIds }, isDeleted: { $ne: true } };
         if (habit) {
             habitQuery.name = { $regex: new RegExp(habit, "i") };
         }

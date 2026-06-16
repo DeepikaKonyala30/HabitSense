@@ -66,6 +66,17 @@ const habitSchema = new mongoose.Schema({
     enum: ['pending', 'completed', 'missed'],
     default: 'pending',
   },
+  // Soft-delete fields — set by the streak monitor cron instead of hard-deleting.
+  // All queries MUST filter { isDeleted: { $ne: true } } to exclude soft-deleted habits.
+  isDeleted: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
+  deletedAt: {
+    type: Date,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

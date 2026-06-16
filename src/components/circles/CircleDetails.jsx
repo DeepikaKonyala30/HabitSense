@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import CircleFeed from "./CircleFeed";
 import JoinRequestsPanel from "./JoinRequestsPanel";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5003";
+const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 const CircleDetails = ({ circleId, onBack, currentUserId }) => {
     const [circle, setCircle] = useState(null);

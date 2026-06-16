@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Check, X } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const JoinRequestsPanel = ({ circleId, onUpdate }) => {
     const [requests, setRequests] = useState([]);

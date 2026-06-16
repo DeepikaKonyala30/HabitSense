@@ -10,7 +10,7 @@ router.get("/:circleId", authMiddleware, async (req, res) => {
   try {
     const circle = await Circle.findById(req.params.circleId);
     if (!circle) return res.status(404).json({ message: "Circle not found" });
-    if (circle.creator.toString() !== req.user._id.toString())
+    if (circle.creator.toString() !== req.user.id)
       return res.status(403).json({ message: "Not authorized" });
 
     const requests = await JoinRequest.find({ circleId: circle._id, status: "pending" }).populate("userId", "name email");
@@ -27,7 +27,7 @@ router.put("/:circleId/:requestId", authMiddleware, async (req, res) => {
   try {
     const circle = await Circle.findById(req.params.circleId);
     if (!circle) return res.status(404).json({ message: "Circle not found" });
-    if (circle.creator.toString() !== req.user._id.toString())
+    if (circle.creator.toString() !== req.user.id)
       return res.status(403).json({ message: "Not authorized" });
 
     const request = await JoinRequest.findById(req.params.requestId);
@@ -37,8 +37,11 @@ router.put("/:circleId/:requestId", authMiddleware, async (req, res) => {
     await request.save();
 
     if (action === "approved") {
-      if (!circle.members.includes(request.userId)) {
-        circle.members.push(request.userId);
+      const isAlreadyMember = circle.members.some(
+        (member) => member.user.toString() === request.userId.toString()
+      );
+      if (!isAlreadyMember) {
+        circle.members.push({ user: request.userId });
         await circle.save();
       }
     }

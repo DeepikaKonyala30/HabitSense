@@ -1,5 +1,5 @@
 import express from 'express';
-import { format, isSameDay, subDays, differenceInDays, parse } from 'date-fns';
+import { format, isSameDay, subDays, differenceInDays, parse, getISOWeek, getISOWeekYear, subWeeks } from 'date-fns';
 import Habit from '../models/habit.js';
 import MissedStreak from '../models/missedStreak.js';
 import StreakRestore from '../models/streakRestore.js';
@@ -53,19 +53,29 @@ const calculateStreak = (completedDates, frequency, target) => {
       }
     }
   } else if (frequency === 'weekly') {
-    // Count weeks with target completions
+    const getWeekId = (date) => {
+      const d = new Date(date);
+      return `${getISOWeekYear(d)}-W${getISOWeek(d)}`;
+    };
+
     const weeks = {};
     sortedDates.forEach((date) => {
-      const weekStart = format(new Date(date), 'yyyy-WW');
-      weeks[weekStart] = (weeks[weekStart] || 0) + 1;
+      const weekId = getWeekId(date);
+      weeks[weekId] = (weeks[weekId] || 0) + 1;
     });
 
-    let currentWeek = format(today, 'yyyy-WW');
-    let weekCount = 0;
-    while (weeks[currentWeek] && weeks[currentWeek] >= target) {
+    let checkDate = new Date();
+    let currentWeekId = getWeekId(checkDate);
+
+    if (!(weeks[currentWeekId] >= target)) {
+      checkDate = subWeeks(checkDate, 1);
+      currentWeekId = getWeekId(checkDate);
+    }
+
+    while (weeks[currentWeekId] && weeks[currentWeekId] >= target) {
       streak++;
-      weekCount++;
-      currentWeek = format(subDays(new Date(currentWeek), 7), 'yyyy-WW');
+      checkDate = subWeeks(checkDate, 1);
+      currentWeekId = getWeekId(checkDate);
     }
   }
 
@@ -142,22 +152,16 @@ const calculateStatus = (completedDates, frequency, target, createdAt, time, tim
 const getHabits = async (req, res) => {
   try {
     console.log('getHabits: Fetching habits for user:', req.user.id);
-    const habits = await Habit.find({ user: req.user.id });
+    const habits = await Habit.find({ user: req.user.id, isDeleted: { $ne: true } });
     console.log('getHabits: Found habits:', habits.length);
 
-    // Update streaks and status for all habits
+    // Update streaks for all habits if changed
     for (const habit of habits) {
-      habit.streak = calculateStreak(habit.completedDates, habit.frequency, habit.target);
-      habit.status = calculateStatus(
-        habit.completedDates,
-        habit.frequency,
-        habit.target,
-        habit.createdAt,
-        habit.time,
-        habit.timeFrom,
-        habit.timeTo
-      );
-      await habit.save();
+      const newStreak = calculateStreak(habit.completedDates, habit.frequency, habit.target);
+      if (newStreak !== habit.streak) {
+        habit.streak = newStreak;
+        await habit.save();
+      }
     }
 
     res.json({
@@ -225,7 +229,7 @@ const updateHabitCompletion = async (req, res) => {
       throw new ApiError(400, 'Date must be in YYYY-MM-DD format');
     }
 
-    const habit = await Habit.findOne({ _id: id, user: req.user.id });
+    const habit = await Habit.findOne({ _id: id, user: req.user.id, isDeleted: { $ne: true } });
     if (!habit) {
       throw new ApiError(404, 'Habit not found');
     }
@@ -270,7 +274,7 @@ const updateHabitCompletion = async (req, res) => {
     console.log('updateHabitCompletion: Habit updated successfully');
 
     // Broadcast update for Live Dashboard Data
-    io.emit("habit_updated", { habitId: id, userId: req.user.id, streak: habit.streak, status: habit.status });
+    io.to(req.user.id).emit("habit_updated", { habitId: id, userId: req.user.id, streak: habit.streak, status: habit.status });
 
     res.json({
       success: true,
@@ -303,17 +307,16 @@ const deleteHabit = async (req, res) => {
 
     console.log('deleteHabit: Successfully deleted habit:', deletedHabit.name);
 
-    // 2. Cascading Delete associated documents
     await Promise.all([
       MissedStreak.deleteMany({ habit: id }),
       StreakRestore.deleteMany({ habit: id }),
-      Notification.deleteMany({ data: { habitId: id } }), // if notifications store habitId in data map
+      Notification.deleteMany({ habitId: id }),
       EmotionLog.deleteMany({ habitId: id }),
     ]);
     console.log('deleteHabit: Successfully performed cascading deletions for habit:', id);
 
     // Broadcast update for Live Dashboard Data
-    io.emit("habit_deleted", { habitId: id, userId });
+    io.to(userId).emit("habit_deleted", { habitId: id, userId });
 
     res.json({
       success: true,
@@ -336,7 +339,7 @@ const markHabitAsMissed = async (req, res) => {
   const { id } = req.params;
   try {
     console.log('markHabitAsMissed: Marking habit as missed:', id);
-    const habit = await Habit.findOne({ _id: id, user: req.user.id });
+    const habit = await Habit.findOne({ _id: id, user: req.user.id, isDeleted: { $ne: true } });
     if (!habit) {
       throw new ApiError(404, 'Habit not found');
     }
@@ -370,7 +373,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
   try {
     console.log('updateHabit: Updating habit:', id);
     validateInput(req.body, ['name', 'frequency', 'emoji']);
-    const habit = await Habit.findOne({ _id: id, user: req.user.id });
+    const habit = await Habit.findOne({ _id: id, user: req.user.id, isDeleted: { $ne: true } });
     if (!habit) {
       return res.status(404).json({ success: false, message: 'Habit not found' });
     }

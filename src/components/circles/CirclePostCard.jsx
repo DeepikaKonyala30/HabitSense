@@ -3,7 +3,7 @@ import { Heart, MessageCircle, Send } from 'lucide-react';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const CirclePostCard = ({ post, currentUserId, onPostUpdated }) => {
     const [showComments, setShowComments] = useState(false);

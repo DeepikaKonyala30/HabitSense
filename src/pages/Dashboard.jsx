@@ -230,37 +230,40 @@ function Dashboard() {
     throw new Error(data.message || 'Failed to restore streak');
   };
 
-  // Handler for closing modal and removing habit from dashboard
-  const handleCloseModal = async () => {
-    if (selectedHabitId) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/habits/${selectedHabitId}`, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          toast.success('Habit permanently removed from dashboard');
-          // Refresh habits to update the UI
-          refetch();
-        } else {
-          throw new Error(data.message || 'Failed to remove habit');
-        }
-      } catch (err) {
-        console.error('Error removing habit:', err);
-        toast.error(`Failed to remove habit: ${err.message}`);
-      }
-    }
-
-    // Close the modal
+  // Handler for closing the modal — ONLY dismisses; does NOT delete the habit.
+  // X button, Cancel, Escape, and backdrop click all call this.
+  const handleCloseModal = () => {
     setShowMissedModal(false);
     setSelectedHabitId(null);
     setSelectedHabitName('');
+  };
+
+  // Explicit "Give Up on this Habit" action — only called from the dedicated button inside the modal.
+  const handleGiveUp = async (habitId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/habits/${habitId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Habit removed.');
+        refetch();
+      } else {
+        throw new Error(data.message || 'Failed to remove habit');
+      }
+    } catch (err) {
+      console.error('Error removing habit:', err);
+      toast.error(`Failed to remove habit: ${err.message}`);
+    } finally {
+      setShowMissedModal(false);
+      setSelectedHabitId(null);
+      setSelectedHabitName('');
+    }
   };
 
   const handleLogout = () => {
@@ -721,6 +724,7 @@ function Dashboard() {
           habitName={selectedHabitName}
           onMotivation={handleMotivation}
           onRestore={handleRestore}
+          onGiveUp={handleGiveUp}
           restoreChances={restoreChances}
         />
       </div>

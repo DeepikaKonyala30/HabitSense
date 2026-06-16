@@ -13,9 +13,10 @@ export const SocketProvider = ({ children }) => {
     const { user } = useAuth(); // Assume we get user object from AuthContext
 
     useEffect(() => {
-        // Only connect if the user is logged in
         if (user) {
-            const socketInstance = io(import.meta.env.VITE_API_URL || 'http://localhost:5003', {
+            const token = localStorage.getItem('token');
+            const socketInstance = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
+                auth: { token },
                 withCredentials: true,
             });
 

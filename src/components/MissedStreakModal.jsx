@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-function MissedStreakModal({ open, onClose, habitId, habitName, onMotivation, onRestore, restoreChances }) {
+function MissedStreakModal({ open, onClose, habitId, habitName, onMotivation, onRestore, onGiveUp, restoreChances }) {
   const [explanation, setExplanation] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -9,6 +9,7 @@ function MissedStreakModal({ open, onClose, habitId, habitName, onMotivation, on
   const [motivation, setMotivation] = useState('');
   const [showRestoreButton, setShowRestoreButton] = useState(true);
   const [restoring, setRestoring] = useState(false);
+  const [givingUp, setGivingUp] = useState(false);
   const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e) => {
@@ -47,6 +48,20 @@ function MissedStreakModal({ open, onClose, habitId, habitName, onMotivation, on
     }
   };
 
+  const handleGiveUp = async () => {
+    if (!window.confirm(`Are you sure you want to permanently remove "${habitName}"? This cannot be undone.`)) return;
+    setGivingUp(true);
+    setError('');
+    try {
+      await onGiveUp(habitId);
+      // parent closes the modal after delete
+    } catch (err) {
+      setError(err.message);
+      setGivingUp(false);
+    }
+  };
+
+  // Safe close — only dismisses the modal, never deletes anything
   const handleClose = () => {
     setShowMotivation(false);
     setMotivation('');
@@ -60,12 +75,17 @@ function MissedStreakModal({ open, onClose, habitId, habitName, onMotivation, on
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    // Backdrop — clicking outside safely closes the modal
+    <div
+      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+      onClick={handleClose}
+    >
       <motion.div
         className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
+        onClick={(e) => e.stopPropagation()} // Prevent backdrop click from bubbling
       >
         {!showMotivation ? (
           <>
@@ -107,34 +127,47 @@ function MissedStreakModal({ open, onClose, habitId, habitName, onMotivation, on
               </div>
             </div>
 
-            {/* Buttons at bottom */}
-            <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-200">
-              {showRestoreButton && (
-                <button
-                  type="button"
-                  className={`px-4 py-2 rounded font-medium transition-all duration-200 ${restoring || restoreChances === 0
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg'
-                    }`}
-                  onClick={handleRestore}
-                  disabled={restoring || restoreChances === 0}
-                >
-                  {restoring
-                    ? '⏳ Restoring...'
-                    : restoreChances > 0
-                      ? '✅ Restore Streak'
-                      : '❌ No Chances Left'
-                  }
-                </button>
-              )}
+            {/* Action buttons */}
+            <div className="flex flex-wrap gap-2 justify-between mt-4 pt-4 border-t border-gray-200">
+              {/* Danger zone — explicit, labelled, confirmed */}
               <button
                 type="button"
-                className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200"
-                onClick={handleClose}
-                disabled={restoring}
+                className="px-4 py-2 rounded text-sm font-medium border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                onClick={handleGiveUp}
+                disabled={restoring || givingUp}
+                title="Permanently remove this habit"
               >
-                Close
+                {givingUp ? 'Removing...' : '🗑 Give Up on this Habit'}
               </button>
+
+              <div className="flex gap-2">
+                {showRestoreButton && (
+                  <button
+                    type="button"
+                    className={`px-4 py-2 rounded font-medium transition-all duration-200 ${restoring || restoreChances === 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg'
+                      }`}
+                    onClick={handleRestore}
+                    disabled={restoring || restoreChances === 0}
+                  >
+                    {restoring
+                      ? '⏳ Restoring...'
+                      : restoreChances > 0
+                        ? '✅ Restore Streak'
+                        : '❌ No Chances Left'
+                    }
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200"
+                  onClick={handleClose}
+                  disabled={restoring || givingUp}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -144,3 +177,4 @@ function MissedStreakModal({ open, onClose, habitId, habitName, onMotivation, on
 }
 
 export default MissedStreakModal;
+

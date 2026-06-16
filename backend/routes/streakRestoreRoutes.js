@@ -84,7 +84,7 @@ router.post('/restore', authMiddleware, async (req, res) => {
     }
 
     // Verify habit exists and belongs to user
-    const habit = await Habit.findOne({ _id: habitId, user: userId });
+    const habit = await Habit.findOne({ _id: habitId, user: userId, isDeleted: { $ne: true } });
     if (!habit) {
       return res.status(404).json({ success: false, message: 'Habit not found' });
     }
@@ -94,9 +94,8 @@ router.post('/restore', authMiddleware, async (req, res) => {
     const todayStr = today.toISOString().split('T')[0];
 
     // Check if habit was already completed today
-    const isCompletedToday = habit.completedDates.some(date =>
-      date.toISOString().split('T')[0] === todayStr
-    );
+    // completedDates are stored as YYYY-MM-DD strings — compare directly, no Date conversion needed
+    const isCompletedToday = habit.completedDates.some(date => date === todayStr);
 
     if (isCompletedToday) {
       return res.status(400).json({

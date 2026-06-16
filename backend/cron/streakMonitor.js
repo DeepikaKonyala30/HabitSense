@@ -1,53 +1,45 @@
 import cron from "node-cron";
 import Habit from "../models/habit.js";
-import MissedStreak from "../models/missedStreak.js";
-import StreakRestore from "../models/streakRestore.js";
-import Notification from "../models/notification.js";
-import CirclePost from "../models/CirclePost.js";
-import EmotionLog from "../models/EmotionLog.js";
 import { io } from "../server.js";
 
 export const startStreakMonitor = () => {
-    // Run every hour to check for habits that have been missed for > 24 hours
+    // Run every hour — soft-deletes habits that have been in "missed" status for > 24 hours.
+    // Uses isDeleted: true instead of hard-deleting so data remains recoverable.
     cron.schedule("0 * * * *", async () => {
-        console.log("[Cron] Running streak monitor cron job...");
+        console.log("[Cron] Running streak monitor...");
         try {
-            // Find habits where status is 'missed' and updatedAt is > 24 hours ago
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-            const habitsToDelete = await Habit.find({
+            // Only fetch habits that are missed, NOT already soft-deleted, and overdue
+            const habitsToSoftDelete = await Habit.find({
                 status: "missed",
+                isDeleted: { $ne: true },
                 updatedAt: { $lt: twentyFourHoursAgo },
             });
 
-            if (habitsToDelete.length > 0) {
-                console.log(`[Cron] Found ${habitsToDelete.length} habits to hard delete due to 24h un-restored miss.`);
+            if (habitsToSoftDelete.length > 0) {
+                console.log(`[Cron] Soft-deleting ${habitsToSoftDelete.length} overdue missed habit(s).`);
 
-                for (const habit of habitsToDelete) {
+                for (const habit of habitsToSoftDelete) {
                     const habitId = habit._id;
                     const userId = habit.user;
 
-                    // 1. Hard Delete the habit
-                    await Habit.findByIdAndDelete(habitId);
+                    // Soft delete — keeps the document in MongoDB, recoverable by an admin
+                    await Habit.findByIdAndUpdate(habitId, {
+                        isDeleted: true,
+                        deletedAt: new Date(),
+                    });
 
-                    // 2. Cascading Delete associated documents
-                    await Promise.all([
-                        MissedStreak.deleteMany({ habitId }),
-                        StreakRestore.deleteMany({ habitId }),
-                        Notification.deleteMany({ "data.habitId": habitId }),
-                        EmotionLog.deleteMany({ habitId }),
-                    ]);
+                    console.log(`[Cron] Soft-deleted habit: "${habit.name}" (id: ${habitId})`);
 
-                    console.log(`[Cron] Successfully permanently deleted habit: ${habit.name}`);
-
-                    // 3. Emit real-time updates to connected clients
-                    io.emit("habit_deleted", { habitId, userId });
+                    // Notify connected clients so the UI removes it immediately
+                    io.to(userId.toString()).emit("habit_deleted", { habitId, userId });
                 }
             } else {
                 console.log("[Cron] No overdue missed habits found.");
             }
         } catch (error) {
-            console.error("[Cron] Error running streak monitor:", error);
+            console.error("[Cron] Error in streak monitor:", error);
         }
     });
 };

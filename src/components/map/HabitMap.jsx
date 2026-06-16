@@ -80,7 +80,7 @@ const HabitMap = () => {
     const [myLocation, setMyLocation] = useState(null);
 
     const token = localStorage.getItem('token');
-    const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5003';
+    const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
     let currentUserId = null;
     if (token) {

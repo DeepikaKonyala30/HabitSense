@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { format, isSameDay, subDays } from 'date-fns';
+import { format, isSameDay, subDays, getISOWeek, getISOWeekYear, subWeeks } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { useSocket } from '../context/SocketContext';
 
@@ -472,19 +472,33 @@ const useHabits = () => {
           }
         }
       } else if (habit.frequency === 'weekly') {
-        // weekly logic unchanged but use completedSet-derived dates array
         const dates = [...(habit.completedDates || [])].map(d => format(new Date(d), 'yyyy-MM-dd')).sort((a, b) => new Date(b) - new Date(a));
+        
+        const getWeekId = (date) => {
+          const d = new Date(date);
+          return `${getISOWeekYear(d)}-W${getISOWeek(d)}`;
+        };
+
         const weeks = {};
         dates.forEach((date) => {
-          const weekStart = format(new Date(date), 'yyyy-WW');
-          weeks[weekStart] = (weeks[weekStart] || 0) + 1;
+          const weekId = getWeekId(date);
+          weeks[weekId] = (weeks[weekId] || 0) + 1;
         });
         console.log(`useHabits: Weekly completions for ${habit.name}:`, weeks);
 
-        let currentWeek = format(new Date(), 'yyyy-WW');
-        while (weeks[currentWeek] && weeks[currentWeek] >= (habit.target || 1)) {
+        let checkDate = new Date();
+        let currentWeekId = getWeekId(checkDate);
+        const target = habit.target || 1;
+
+        if (!(weeks[currentWeekId] >= target)) {
+          checkDate = subWeeks(checkDate, 1);
+          currentWeekId = getWeekId(checkDate);
+        }
+
+        while (weeks[currentWeekId] && weeks[currentWeekId] >= target) {
           streak++;
-          currentWeek = format(subDays(new Date(currentWeek), 7), 'yyyy-WW');
+          checkDate = subWeeks(checkDate, 1);
+          currentWeekId = getWeekId(checkDate);
         }
       }
 

@@ -6,6 +6,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import http from "http";
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 
 import authRoutes from "./routes/authRoutes.js";
 import habitRoutes from "./routes/habitRoutes.js";
@@ -55,8 +56,21 @@ export const io = new Server(server, {
   },
 });
 
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) return next(new Error('Unauthorized'));
+  try {
+    socket.userId = jwt.verify(token, process.env.JWT_SECRET).id;
+    next();
+  } catch (err) {
+    next(new Error('Invalid token'));
+  }
+});
+
 io.on("connection", (socket) => {
-  console.log(`Socket Connected: ${socket.id}`);
+  console.log(`Socket Connected: ${socket.id} (User: ${socket.userId})`);
+
+  socket.join(socket.userId);
 
   socket.on("disconnect", () => {
     console.log(`Socket Disconnected: ${socket.id}`);
@@ -96,7 +110,8 @@ const checkHabitStatuses = async () => {
     const pendingDailyHabits = await Habit.find({
       status: "pending",
       frequency: "daily",
-      $nor: [{ completedDates: todayStr }],
+      isDeleted: { $ne: true },
+      completedDates: { $nin: [todayStr] },
     });
 
     const habitsToUpdate = pendingDailyHabits.filter((habit) => {
@@ -141,7 +156,7 @@ const startServer = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("MongoDB Connected");
 
-    const PORT = process.env.PORT || 5003;
+    const PORT = process.env.PORT || 5000;
 
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -168,7 +183,7 @@ const startServer = async () => {
 
   } catch (err) {
     if (err.code === "EADDRINUSE") {
-      console.error(`Port ${process.env.PORT || 5003} is already in use!`);
+      console.error(`Port ${process.env.PORT || 5000} is already in use!`);
     } else {
       console.error("MongoDB Connection Failed:", err);
     }

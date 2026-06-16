@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { X, MapPin } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003';
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const CreateCircleModal = ({ onClose, onCircleCreated }) => {
     const [formData, setFormData] = useState({
@@ -59,7 +59,7 @@ const CreateCircleModal = ({ onClose, onCircleCreated }) => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            onCircleCreated(res.data.circle);
+            onCircleCreated(res.data.circle || res.data);
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'Error creating circle');
         } finally {

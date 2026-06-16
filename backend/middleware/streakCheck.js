@@ -7,7 +7,7 @@ export const checkStreakThreshold = async (req, res, next) => {
         const userId = req.user.id;
 
         // Find all habits for the user
-        const userHabits = await Habit.find({ user: userId });
+        const userHabits = await Habit.find({ user: userId, isDeleted: { $ne: true } });
 
         if (!userHabits || userHabits.length === 0) {
             return res.status(403).json({
